@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="es">
+  <meta charset="UTF-8">
+  <head>
+    <title>Calculadora de IMC</title>
+    <link rel="stylesheet"
+          href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css"
+          type="text/css"
+          media="screen" />
+    <style>
+     /* Conenedor de los resultados.
+      * Los elementos se despliegan horizontalmente.
+      */
+     .container {
+       display: flex;
+       flex: 1;
+       flex-flow: row nowrap;
+     }
+
+     /* Elemento izquierdo del contenedor de resultados.
+      * El color del cuadro de resultado se cambia modificando el DOM mediante
+      * jQuery.
+      */
+     .left {
+       display: inline-block;
+       vertical-align: top;
+       padding-right: 5%;
+     }
+
+     /* Elemento derecho del contenedor de resultados.
+      * Muestra la imagen acorde el resultado. La imagen se cambia modificando
+      * el DOM usando jQuery.
+      */
+     .right {
+       width: 182px;
+       height: 225px;
+       display: inline-block;
+       vertical-align: top;
+     }
+
+     /* Aplica algunos márgenes y espacio entre elementos como cajas de texto
+      * y otros componentes como sliders
+      */
+     .form-input {
+       width: 500px;
+       display: flex;
+       flex: 1;
+       flex-flow: column;
+       padding: 2px 4px 6px 4px;
+     }
+
+     .form-input .slider {
+       margin: 2px;
+     }
+
+     .form-input #rangoMsg {
+       padding: 4px;
+       font-weight: bold;
+     }
+    </style>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"
+            integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0="
+            crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"
+            integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU="
+            crossorigin="anonymous"></script>
+    <script>
+     /* Inicializa los elementos de la interfaz de usuario con jQuery */
+     $(document).ready(function() {
+       // Altera la caja de texto con id "resultado" para que sólo se pueda
+       // modificar a través de jQuery manupulando el DOM.
+       $("#resultado").prop("readonly", true);
+
+       // Crea un componente slider para el parámetro del peso
+       $("#slider-peso").slider({
+         range: "max",
+         min: 30,
+         max: 200,
+         value: 60,
+         // Mantiene actualizado el valor del peso cuando varía el slider
+         slide: function(event, ui) {
+           $("#peso").val(ui.value);
+         }
+       });
+       // Inicializa el valor de la caja de texto con id "peso" con el valor del
+       // slider
+       $("#peso").val($("#slider-peso").slider("value"));
+       $("#slider-peso.ui-widget-content").css("background-color", "silver")
+
+       // Crea un componente slider para el parámetro de la altura
+       $("#slider-altura").slider({
+         range: "max",
+         min: 120,
+         max: 200,
+         value: 20,
+         // Mantiene actualizado el valor del peso cuando varía el slider
+         slide: function(event, ui) {
+           $("#altura").val(ui.value);
+         }
+       });
+       // Inicializa el valor de la caja de texto con id "altura" con el valor del
+       // slider
+       $("#altura").val($("#slider-altura").slider("value"));
+       $("#slider-altura.ui-widget-content").css("background-color", "#fd0")
+
+       /* Con jQuery se asocia el evento onClick al botón con id "submit". Aquí
+        * se define cómo se maneja el evento al hacer clic en el botón.
+        */
+       $("#submit").click(function(e) {
+         // Evita que se ejecute la acción por default con javascript
+         e.preventDefault();
+
+         // Obiene los datos del usuario desde los campos de entrada
+         const peso = $("#peso").val();      // Valor del elemento con id "peso"
+         const altura = $("#altura").val();  // Valor del elemento con id "altura"
+
+         // Verifica que los valores no sean vacíos
+         if (peso && altura) {
+           // Calcula el IMC usando los valores de peso y altura mediante la
+           // función "imc" definida más abajo.
+           const resultadoImc = imc(peso, altura);
+
+           // Limpia el mensaje de salida o error si existe modificando el DOM
+           // con jQuery.
+           $("#rangoMsg").text("");
+
+           // Cambia el valor de la caja de texto con id "resultado". Coloca el
+           // valor numérico en la caja de texto con id "resultado".
+           $("#resultado").val(new Intl.NumberFormat('es-MX').format(resultadoImc));
+
+           // Cambia la leyenda del IMC y la imagen según el resultado. La
+           // imagen se cambia mediante jQuery variando el valor de la propiedad
+           // css "background" del elemento con id "css-sprite".
+           // BAJO DE PESO
+           if (resultadoImc < 18.5) {
+             $("#rangoMsg")          // Cambia el mensaje de resultado
+               .text("Bajo peso");
+             $("#divResultado")      // Cambia la propiedad del color de fondo a azul
+               .css("background-color", "#05f");
+             $("#css-sprite")        // Cambia el fondo de la imagen del resultado
+               .css({ "background": "url('sprite.jpg') 0px 10px no-repeat" });
+           }
+           // PESO NORMAL
+           else if (18.5 <= resultadoImc && resultadoImc < 25) {
+             $("#rangoMsg")          // Cambia el mensaje de resultado
+               .text("Peso normal");
+             $("#divResultado")      // Cambia la propiedad del color de fondo a verde
+               .css("background-color", "#00ff09");
+             $("#css-sprite")        // Cambia el fondo de la imagen del resultado
+               .css({ "background": "url('sprite.jpg') -182px 10px no-repeat" });
+           }
+           // SOBREPESO
+           else if (25 <= resultadoImc && resultadoImc < 30) {
+             $("#rangoMsg")          // Cambia el mensaje de resultado
+               .text("Sobrepeso");
+             $("#divResultado")      // Cambia la propiedad del color de fondo a amarillo
+               .css("background-color", "#ff0");
+             $("#css-sprite")        // Cambia el fondo de la imagen del resultado
+               .css({ "background": "url('sprite.jpg') -364px 10px no-repeat" });
+           }
+           // OBESIDAD GRADO I
+           else if (30 <= resultadoImc && resultadoImc < 35) {
+             $("#rangoMsg")          // Cambia el mensaje de resultado
+               .text("Obesidad grado I");
+             $("#divResultado")      // Cambia la propiedad del color de fondo a naranja claro
+               .css("background-color", "#f90");
+             $("#css-sprite")        // Cambia el fondo de la imagen del resultado
+               .css({ "background": "url('sprite.jpg') -546px 10px no-repeat" });
+           }
+           // OBESIDAD GRADO II
+           else if (35 <= resultadoImc && resultadoImc < 40) {
+             $("#rangoMsg")          // Cambia el mensaje de resultado
+               .text("Obesidad grado II");
+             $("#divResultado")      // Cambia la propiedad del color de fondo a naranja oscuro
+               .css("background-color", "#f20");
+             $("#css-sprite")        // Cambia el fondo de la imagen del resultado
+               .css({ "background": "url('sprite.jpg') -728px 10px no-repeat" });
+           }
+           // OBESIDAD GRADO III
+           else {
+             $("#rangoMsg")          // Cambia el mensaje de resultado
+               .text("Obesidad grado III");
+             $("#divResultado")      // Cambia la propiedad del color de fondo a rojo
+               .css("background-color", "#f00");
+             $("#css-sprite")        // Cambia el fondo de la imagen del resultado
+               .css({ "background": "url('sprite.jpg') -910px 10px no-repeat" });
+           }
+         }
+         /* Si los valores de las cajas de texto #altura o #peso están vacías
+          * genera un mensaje de error y lo coloca en la etiqueta span con id
+          * "rangoMsg".
+          */
+         else
+           $("#rangoMsg").text("Debe ingresar su peso y altura.");
+       });
+     });
+    </script>
+  </head>
+  <body>
+    <h2>Calculadora de IMC</h2>
+    <form method="GET">
+      <div class="form-input">
+        <label for="peso">Peso (kgs.)</label>
+        <input id="peso" name="peso" type="text" placeholder="peso"/>
+        <div class="slider" id="slider-peso"></div>
+      </div>
+      <div class="form-input">
+        <label for="altura">Altura (cms.)</label>
+        <input id="altura" name="altura" type="text" placeholder="altura"/>
+        <div class="slider" id="slider-altura"></div>
+      </div>
+      <div>
+        <input id="submit" type="submit" value="Calcular"/>
+      </div>
+    </form>
+    <hr/>
+    <div>
+      <div class="left">
+        <div id="divResultado" class="form-input">
+          <label for="resultado">Resultado</label>
+          <input id="resultado" name="resultado" type="text" value=""/>
+          <span id="rangoMsg"></span>
+        </div>
+        <div>
+          Los resultados del IMC son interpretados de la siguiente forma:
+
+          <ul>
+            <li>Bajo peso = IMC inferior a 18,5 kg/m².</li>
+            <li>Peso normal = IMC entre 18,5 y 24,9 kg/m².</li>
+            <li>Sobrepeso = IMC entre 25 y 29,9 kg/m ².</li>
+            <li>Obesidad grado I = IMC entre 30 y 34,9 kg/m²</li>
+            <li>Obesidad grado II = IMC entre 35 y 39,9 kg/m².</li>
+            <li>Obesidad grado III (obesidad mórbida) = IMC superior a 40 kg/m².</l>
+          </ul>
+        </div>
+      </div>
+      <div id="css-sprite" class="right"></div>
+    </div>
+  </body>
+  <script>
+   /* Función de la fórmula para calcular el IMC */
+   function imc(peso, altura) {
+     altura = altura / 100;
+     return peso / (altura * altura);
+   }
+  </script>
+</html>
